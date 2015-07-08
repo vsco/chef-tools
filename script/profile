@@ -2,29 +2,15 @@
 
 umask 022
 
-function tasks_profile {
+function cheftools_profile {
   local shome="$(unset CDPATH; cd -P -- "$(dirname -- "$BASH_SOURCE")/.." && pwd -P)"
-
-  # tools
-  local thome="$(unset CDPATH; cd -P -- "$(dirname -- "$shome")" && pwd -P)"
-  if [[ -d "$thome/tools" ]]; then
-    thome="$thome/tools"
-  else
-    thome="$(unset CDPATH; cd -P -- "$(dirname -- "$shome")/../.." && pwd -P)"
-    if [[ -d "$thome/tools/current" ]]; then
-      thome="$thome/tools/current"
-    else
-      echo "WARN: could not find tools deploy" 1>&2
-      unset thome
-    fi
-  fi
 
   if [[ -n "${thome:-}" ]]; then
     source "$thome/script/profile"
   fi
 
-  # tasks
+  # chef_tools
   PATH="$shome/bin:$shome/exec:$PATH"
 }
 
-tasks_profile
+cheftools_profile
