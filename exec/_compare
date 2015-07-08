@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+DEFINE_string difftool "vimdiff" "Diffing tool"
+
+# chef diff runner
+function cdiff {
+  local nm_mod="$1"; shift
+  case "$#" in
+    0)
+      echo "ERROR: specify at least one json report"
+      return 1
+      ;;
+
+    1)
+      cdiff_"$nm_mod" $1
+      ;;
+
+    2)
+      $FLAGS_difftool <(cdiff_"$nm_mod" $1) <(cdiff_"$nm_mod" $2)
+      ;; 
+
+    *)
+      echo "ERROR: specify one or two json reports"
+      return 1
+      ;;
+  esac
+}
+
+# sorted json to yaml
+function syaml {
+  cat "$1" | jq -S '.node.automatic = { } | .all_resources' | ruby -rjson -ryaml -e 'print YAML::dump(JSON::parse(STDIN.read))'
+}
+
+# chef diff of all resources
+function cdiff_resources {
+  syaml $1 | perl -ne 'm{^\s*(source_line|elapsed_time|block|end_time|start_time|run_id|updated|updated_by_last_action|checksum):} || print' \
+    | perl -pe 'm{^\s*command:} && s{(chef-script).*}{${1}ZZZ}'
+}
+
+# chef diff of file contents
+function cdiff_file  {
+  cat "$1" | jq -r '.all_resources[].instance_vars | "\(.resource_name) \(.name)\n  \(.name) \(reduce .action[] as $a (""; . + $a + " "))\nDIFF\((.diff//"" | tojson) | fromjson)"' 2>&- | perl -pe 'm{^DIFF} && s{DIFF}{}; s{\\n}{\n}g'
+}
+
+# chef diff of execution order
+function cdiff_order {
+  cat "$1" | jq -r '.all_resources[].instance_vars | "\(.resource_name) \(.name)\n  \(.name) \(reduce .action[] as $a (""; . + $a + " "))"' 2>&-
+}
+
+# chef diff of node data
+function cdiff_node {
+  cat "$1" | jq -S -r '.node.automatic = { } | .node' | ruby -rjson -ryaml -e 'print YAML::dump(JSON::parse(STDIN.read))'
+}
+
+# chef diff of resource execution time
+function cdiff_time {
+  cat "$1" | jq -r '.all_resources[] | .instance_vars | "\(.resource_name) \(.name) \(.elapsed_time)"' | perl -pe 's{(\d\S+)$}{sprintf("%.0f", $1)}e' | sort
+}
+
+# chef diff of slow execution time
+function cdiff_slow {
+  cat "$1" | jq -r '.all_resources[] | .instance_vars | "\(.resource_name) \(.name) \(.elapsed_time)"' | perl -pe 's{(\d\S+)$}{sprintf("%0.1f", $1)}e' | egrep -v ' (0\.)|(1\.0)$' | sort
+}

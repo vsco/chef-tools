@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+#// file -- compares differences in file content
+#// order -- compares differences in resource order
+
+shome="$(unset CDPATH; cd -P -- "$(dirname -- "$BASH_SOURCE")/.." && pwd -P)"
+
+source _jason
+
+require _compare
+
+function main {
+  local nm_diff="$(basename "$0")"
+  nm_diff="${nm_diff##*-}"
+
+  if [[ "$#" -gt 0 && -d "$1" ]]; then
+    local pth_reports="$1"; shift
+    set -- $(set +f; ls -trhd "$pth_reports"/chef-run-report-*.json | tail -2) "$@"
+  fi
+  cdiff "$nm_diff" "$@"
+}
+
+require sub "$BASH_SOURCE" "$@"
