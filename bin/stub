@@ -4,6 +4,6 @@ set -efu
 
 shome="$(unset CDPATH; cd -P -- "$(dirname -- "$BASH_SOURCE")/.." && pwd -P)"
 source "$shome/script/profile"
-PATH="$shome/exec:$PATH"
+PATH="$shome/bin:$PATH"
 
-exec alox "$0" "$@" 
+exec alox "$0" "$@"

@@ -10,7 +10,7 @@ function cheftools_profile {
   fi
 
   # chef_tools
-  PATH="$shome/bin:$shome/exec:$PATH"
+  PATH="$shome/bin:$PATH"
 }
 
 cheftools_profile
